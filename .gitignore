@@ -1,0 +1,12 @@
+/.coverage
+/.idea/
+/.nox/
+/.python-version
+/.venv/
+/.vscode/
+/coverage.xml
+/dist/
+/docs/_build/
+/src/*.egg-info/
+__pycache__/
+poetry.toml

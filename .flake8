@@ -1,0 +1,12 @@
+[flake8]
+select = B,B9,BLK,C,E,F,I,S,W
+ignore = E203,W503
+per-file-ignores = tests/*:S101
+
+application-import-names = yatl,tests
+import-order-style = google
+
+max-line-length = 120
+
+# I scored 19 LOL
+max-complexity = 20

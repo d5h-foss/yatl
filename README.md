@@ -1,6 +1,5 @@
 [![Tests](https://github.com/d5h-foss/yatl/workflows/Tests/badge.svg)](https://github.com/d5h-foss/yatl/actions?workflow=Tests)
 [![Codecov](https://codecov.io/gh/d5h-foss/yatl/branch/master/graph/badge.svg)](https://codecov.io/gh/d5h-foss/yatl)
-[![Read the Docs](https://readthedocs.org/projects/yatl/badge/)](https://yatl.readthedocs.io/)
 [![PyPI](https://img.shields.io/pypi/v/pyyatl.svg)](https://pypi.org/project/pyyatl/)
 
 # Summary
@@ -258,5 +257,6 @@ defaults from `file2.yaml` will take precendence.
 - [ ] Polish (load lists of files, allow escaping, etc.)
 - [ ] Complete documentation
 - [ ] Include line number with error messages
+- [ ] Support Python versions other than CPython 3.6 and Python 3.7+ (because of dict ordering)
 
 This software should be considered beta.

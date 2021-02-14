@@ -81,3 +81,13 @@ def test_int_interpolation():
         - 1
     """
     check(test, expected, {"foo": 1}, {})
+
+
+def test_interpolation_in_key():
+    test = """
+        .(foo): baz
+    """
+    expected = """
+        bar: baz
+    """
+    check(test, expected, {"foo": "bar"}, {})

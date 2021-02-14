@@ -194,7 +194,8 @@ def _update_obj(
 ) -> None:
     if not isinstance(obj, dict):
         raise YATLSyntaxError(f"Cannot add field {key} to non-object")
-    obj[key] = render_from_obj(value, params)
+    interpolated_key = render_interpolation(key, params)
+    obj[interpolated_key] = render_from_obj(value, params)
 
 
 def _load_yaml(path: str) -> str:

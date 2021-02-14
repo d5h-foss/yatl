@@ -110,7 +110,7 @@ hosts:
 
 If you actually want a list within a list when using `.if`, you need to add an extra list wrapping the `.if`.
 
-# For Loops
+## For Loops
 
 For loops allow you to loop over values:
 
@@ -171,7 +171,7 @@ The basic idea is that if you load a YATL file like this:
 
 ```yaml
 top:
-    load_defaults_from: some-file.yaml
+    .load_defaults_from: some-file.yaml
     foo: bar
 ```
 
@@ -197,7 +197,7 @@ say we have this in a file called `config.yaml`:
 
 ```yaml
 outer:
-    load_defaults_from: some-file.yaml
+    .load_defaults_from: some-file.yaml
     inner:
         foo: bar
 ```
@@ -242,7 +242,7 @@ the highest nesting level will win. For example, if we have:
 
 ```yaml
 outer:
-    load_defaults_from: file1.yaml
+    .load_defaults_from: file1.yaml
     inner:
         load_defaults_from: file2.yaml
 ```
@@ -251,6 +251,8 @@ If both `file1.yaml` and `file2.yaml` have defaults for the same field (which wo
 defaults from `file2.yaml` will take precendence.
 
 # Status
+
+The language spec is likely to change at least slightly.
 
 - [x] Proof of concept
 - [ ] Support safe expressions

@@ -166,17 +166,16 @@ hosts:
 
 ## Loading Files
 
-YATL allows including files, to make it easier to organize large YAML objects.
+YATL allows including files, to make it easier to organize otherwise large YAML files.
 
 The basic idea is that if you load a YATL file like this:
 
 ```yaml
-top:
-    .load_defaults_from: some-file.yaml
-    foo: bar
+foo: bar
+.load: some-file.yaml
 ```
 
-And `some-file.yaml` looks like this:
+And if `some-file.yaml` looks like this:
 
 ```yaml
 baz: quux
@@ -185,12 +184,24 @@ baz: quux
 Then you'll get this:
 
 ```yaml
-top:
-    foo: bar
-    baz: quux
+foo: bar
+baz: quux
 ```
 
-Loaded files can also load other files.
+If you want to load more than one file in the same object, you can also load lists of files:
+
+```yaml
+.load:
+  - defs.yaml
+  - resource_types.yaml
+  - resources.yaml
+```
+
+Loaded files can also load other files recursively.
+
+If files contain the same fields as the object they're loaded into, then whatever field is seen last will be the
+one used in the output. There is no deep merging of nested objects done with `.load`. You can however load deeply
+nested objects and merge specific nested fields with `.load_defaults_from`.
 
 Files loaded with `.load_defaults_from` are always considered defaults. Hence, if a file has fields in common
 with loaded defaults, then the file doing the loading always wins out. Otherwise objects are merged. For example,
@@ -356,9 +367,10 @@ tasks:
 
 - [x] Proof of concept
 - [ ] Support safe expressions
-- [ ] Polish (load lists of files, allow escaping, etc.)
+- [ ] Polish (allow escaping, etc.)
 - [ ] Complete documentation
 - [ ] Include line number with error messages and don't stop at the first error
 - [ ] Support Python versions other than CPython 3.6 and Python 3.7+ (because of dict ordering)
+- [ ] Support other programming languages
 
 This software should be considered beta.

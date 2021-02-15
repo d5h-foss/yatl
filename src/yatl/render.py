@@ -44,13 +44,14 @@ def render_from_obj(  # noqa: C901
                         )
                 else:
                     last_if = None
-                    if key == ".load_defaults_from":
-                        defaults_obj = _load_defaults(obj, params)
+                    if key == ".load":
+                        rendered_obj = _render_load(value, params, defs, rendered_obj)
+                    elif key == ".load_defaults_from":
+                        defaults_obj = _load_defaults(value, params, defs)
                     elif _is_for(key):
-                        # TODO: I can remove this restriction and use _shallow_merge.
-                        if len(obj) != 1 or defaults_obj:
-                            raise YATLSyntaxError(f"for loop must be by itself: {key}")
-                        return _render_for(key, value, params, defs)
+                        rendered_obj = _render_for(
+                            key, value, params, defs, rendered_obj
+                        )
                     elif _is_def(key):
                         _store_def(key, value, defs)
                     elif _is_use(key):
@@ -64,7 +65,6 @@ def render_from_obj(  # noqa: C901
                 _update_obj(rendered_obj, key, value, params, defs)
 
         if defaults_obj:
-            defaults_obj = render_from_obj(defaults_obj, params, defs)
             rendered_obj = _deep_merge_dicts(defaults_obj, rendered_obj)  # type: ignore
 
         return rendered_obj
@@ -84,21 +84,58 @@ def render_from_obj(  # noqa: C901
         return obj
 
 
-def _load_defaults(obj: dict, params: Dict[str, Any]) -> dict:
-    value = obj[".load_defaults_from"]
-    if not isinstance(value, str):
-        raise YATLSyntaxError(f"load_defaults_from directive is not a string: {value}")
+def _render_load(
+    value: JsonType,
+    params: Dict[str, Any],
+    defs: Dict[str, Def],
+    rendered_obj: JsonType,
+) -> JsonType:
+    if not isinstance(value, list):
+        value = [value]
 
-    filename = render_interpolation(value, params)
-    if not isinstance(filename, str):
-        raise YATLSyntaxError(
-            f"load_defaults_from directive is not a string: {filename}"
+    for filename in value:
+        filename = _parse_filename(filename, params, "load")
+        elem = _load_yaml(filename)
+        rendered_elem = render_from_obj(elem, params, defs)
+        rendered_obj = _shallow_merge(
+            f"load: {filename}", rendered_elem, params, defs, rendered_obj
         )
 
-    defaults_obj = _load_yaml(filename)
-    if not isinstance(defaults_obj, dict):
-        raise YATLSyntaxError(f"{filename} must be an object at the top-level")
-    return defaults_obj
+    return rendered_obj
+
+
+def _parse_filename(filename: JsonType, params: Dict[str, Any], load_type: str) -> str:
+    if not isinstance(filename, str):
+        raise YATLSyntaxError(
+            f"{load_type} must be given a string or list of strings: {filename}"
+        )
+    filename = render_interpolation(filename, params)
+    if not isinstance(filename, str):
+        raise YATLSyntaxError(
+            f"{load_type} directive must be given a string or list of strings: {filename}"
+        )
+    return filename
+
+
+def _load_defaults(
+    value: JsonType, params: Dict[str, Any], defs: Dict[str, Def]
+) -> dict:
+    if not isinstance(value, list):
+        value = [value]
+
+    accumulated_defaults: dict = {}
+    for filename in value:
+        filename = _parse_filename(filename, params, "load_defaults_from")
+        defaults = _load_yaml(filename)
+        if not isinstance(defaults, dict):
+            raise YATLSyntaxError(f"{filename} must be an object at the top-level")
+
+        rendered_defaults = render_from_obj(defaults, params, defs)
+        accumulated_defaults = _deep_merge_dicts(
+            accumulated_defaults, rendered_defaults
+        )
+
+    return accumulated_defaults
 
 
 def _is_if(key: str) -> bool:
@@ -196,24 +233,30 @@ def _is_for(key: str) -> bool:
 
 
 def _render_for(
-    key: str, value: JsonType, params: Dict[str, Any], defs: Dict[str, Def]
-) -> List:
+    key: str,
+    value: JsonType,
+    params: Dict[str, Any],
+    defs: Dict[str, Def],
+    rendered_obj: JsonType,
+) -> JsonType:
     for_match = re.match(
         r"for\s*\(([a-zA-Z_][a-zA-Z0-9_]*)\s+in\s+([a-zA-Z_][a-zA-Z0-9_]*)\)\s*$",
         key[1:],
     )
     if not for_match:
         raise YATLSyntaxError(f"Invalid for statement: {key}")
+
     var = for_match[1].strip()
     param = for_match[2].strip()
     try:
         iterable = params[param]
     except KeyError:
         raise YATLEnvironmentError(f"Missing parameter {param}")
+
     rendered_list = []
     for elem in iterable:
         rendered_list.append(render_from_obj(value, {**params, var: elem}, defs))
-    return rendered_list
+    return _shallow_merge(key, rendered_list, params, defs, rendered_obj)
 
 
 def _can_extend_list(elem: JsonType, rendered_elem: JsonType) -> bool:
@@ -235,6 +278,7 @@ def _is_directive(key: str) -> bool:
         or _is_elif(key)
         or key == ".else"
         or _is_for(key)
+        or key == ".load"
         or _is_def(key)
         or _is_use(key)
     )

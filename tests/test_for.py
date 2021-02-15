@@ -93,13 +93,27 @@ def test_nested_for():
     check(test, expected, {"xs": ["a", "b"], "ys": [1, 2]}, {})
 
 
-def test_for_not_only_key():
+def test_for_cannot_merge():
     test = """
         foo: bar
         .for (x in xs): .(x)
     """
     with pytest.raises(YATLSyntaxError):
         check(test, "", {"xs": []}, {})
+
+
+def test_multiple_fors():
+    test = """
+        .for (x in xs): .(x)
+        .for (y in ys): .(y)
+    """
+    expected = """
+        - 1
+        - 2
+        - 3
+        - 4
+    """
+    check(test, expected, {"xs": [1, 2], "ys": [3, 4]}, {})
 
 
 def test_load_in_for():

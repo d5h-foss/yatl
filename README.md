@@ -1,3 +1,4 @@
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Tests](https://github.com/d5h-foss/yatl/workflows/Tests/badge.svg)](https://github.com/d5h-foss/yatl/actions?workflow=Tests)
 [![Codecov](https://codecov.io/gh/d5h-foss/yatl/branch/master/graph/badge.svg)](https://codecov.io/gh/d5h-foss/yatl)
 [![PyPI](https://img.shields.io/pypi/v/pyyatl.svg)](https://pypi.org/project/pyyatl/)
@@ -13,7 +14,7 @@ template is probably tied to the specific language in which your toolchain is wr
 YATL aims to be both a standard YAML-in, YAML-out templating language, and a library to load files. This codebase
 is a Python implementation, but the plan is to make a core library with bindings for many languages.
 
-This is a work in progress. See the status section below for details.
+This is a work in progress. See the [status](#Status) section below for details.
 
 # Installation
 
@@ -250,15 +251,114 @@ outer:
 If both `file1.yaml` and `file2.yaml` have defaults for the same field (which would have to be inside `inner`), then the
 defaults from `file2.yaml` will take precendence.
 
+## Definitions
+
+Definitions in YATL are an improvement over anchors in YAML. They're a bit like a function:
+
+```yaml
+.def email_on_failure(email):
+    .if (is_production):
+        on-failure:
+            alert-email: .(email)
+tasks:
+    - test:
+        command: run_tests.sh
+        .use email_on_failure: tests@example.com
+    - deploy:
+        command: do_deploy.sh
+        .use email_on_failure: deploys@example.com
+```
+
+If `is_production = true`, then the output will be:
+
+```yaml
+tasks:
+    - test:
+        command: run_tests.sh
+        on-failure:
+            alert-email: tests@example.com
+    - deploy:
+        command: do_deploy.sh
+        on-failure:
+            alert-email: deploys@example.com
+```
+
+If `is_production = false` then the `on-failure` parts will be left out.
+
+Definitions are more powerful than anchors because you can parameterize them.
+They're also cleaner because, unlike anchors, the definition doesn't remain in the output.
+Only the usages are in the output.
+
+Definitions can have zero to any number of arguments. If they have zero arguments, then
+pass an empty string, list, or object as the argument when using it (this is just so the syntax is valid YAML):
+
+```yaml
+.def replicas:
+    .if (is_production): 3
+    .else: 1
+
+services:
+    .for (s in services):
+        name: .(s)
+        replicas:
+            .use replicas: {}
+```
+
+If `is_production = true` and `services = ["foo", "bar"]`, then the output will be:
+
+```yaml
+services:
+    - name: foo
+      replicas: 3
+    - name: bar
+      replicas: 3
+```
+
+If there are multiple arguments, they can be passed as an object or list:
+
+```yaml
+.def task(name, command):
+    name: .(name)
+    command: .(command)
+    container: ubuntu
+    .if (is_production):
+        on-failure:
+            alert-email: errors@example.com
+
+tasks:
+    - .use task:  # Pass args as an object
+        name: build
+        command: build.sh
+    - .use task:  # Pass args as a list
+        - test
+        - test.sh
+    - .use task: [deploy, deploy.sh]  # Shorthand list
+```
+
+If `is_production = false`, the output will be:
+
+```yaml
+tasks:
+    - name: build
+      command: build.sh
+      container: ubuntu
+    - name: test
+      command: test.sh
+      container: ubuntu
+    - name: deploy
+      command: deploy.sh
+      container: ubuntu
+```
+
 # Status
 
-The language spec is likely to change at least slightly.
+⚠️ The language spec is likely to change at least slightly.
 
 - [x] Proof of concept
 - [ ] Support safe expressions
 - [ ] Polish (load lists of files, allow escaping, etc.)
 - [ ] Complete documentation
-- [ ] Include line number with error messages
+- [ ] Include line number with error messages and don't stop at the first error
 - [ ] Support Python versions other than CPython 3.6 and Python 3.7+ (because of dict ordering)
 
 This software should be considered beta.

@@ -1,9 +1,9 @@
 from typing import Any, Dict, Iterable, Tuple
 
-from yatl.types import YATLEnvironmentError, YATLSyntaxError
+from yatl.types import JsonType, YATLEnvironmentError, YATLSyntaxError
 
 
-def render_interpolation(s: str, params: Dict[str, Any]) -> str:
+def render_interpolation(s: str, params: Dict[str, Any]) -> JsonType:
     input_parts = parse_expressions(s)
     evaled_parts = [
         (evaluate(p, params) if is_expr else p) for p, is_expr in input_parts

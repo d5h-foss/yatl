@@ -7,6 +7,4 @@ application-import-names = yatl,tests
 import-order-style = google
 
 max-line-length = 120
-
-# I scored 19 LOL
-max-complexity = 20
+max-complexity = 10

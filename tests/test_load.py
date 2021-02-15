@@ -192,3 +192,27 @@ def test_non_object_file():
     """
     with pytest.raises(YATLSyntaxError):
         check(test, "", {}, {"non_object": non_object})
+
+
+def test_load_arg_is_int():
+    test = """
+        top:
+            .load_defaults_from: 1
+    """
+    file1 = """
+        {}
+    """
+    with pytest.raises(YATLSyntaxError):
+        check(test, "", {}, {"1": file1})
+
+
+def test_load_arg_is_obj():
+    test = """
+        top:
+            .load_defaults_from: {}
+    """
+    file1 = """
+        {}
+    """
+    with pytest.raises(YATLSyntaxError):
+        check(test, "", {}, {"{}": file1})
